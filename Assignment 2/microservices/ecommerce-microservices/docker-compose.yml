@@ -1,0 +1,81 @@
+services:
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+      - .env.example
+    environment:
+      PRODUCT_GRPC_PORT: ${PRODUCT_GRPC_PORT:-50051}
+      PRODUCT_DB_PATH: ${PRODUCT_DB_PATH:-/data/products.db}
+    volumes:
+      - product-db:/data
+    ports:
+      - "${PRODUCT_GRPC_PORT:-50051}:${PRODUCT_GRPC_PORT:-50051}"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${PRODUCT_GRPC_PORT:-50051}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+      - .env.example
+    environment:
+      ORDER_GRPC_PORT: ${ORDER_GRPC_PORT:-50052}
+      ORDER_DB_PATH: ${ORDER_DB_PATH:-/data/orders.db}
+      PRODUCT_SERVICE_ADDRESS: ${PRODUCT_SERVICE_ADDRESS:-product-service:50051}
+    volumes:
+      - order-db:/data
+    ports:
+      - "${ORDER_GRPC_PORT:-50052}:${ORDER_GRPC_PORT:-50052}"
+    depends_on:
+      product-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${ORDER_GRPC_PORT:-50052}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+      - .env.example
+    environment:
+      GATEWAY_HTTP_PORT: ${GATEWAY_HTTP_PORT:-8080}
+      GATEWAY_REQUEST_TIMEOUT: ${GATEWAY_REQUEST_TIMEOUT:-5s}
+      PRODUCT_SERVICE_ADDRESS: ${PRODUCT_SERVICE_ADDRESS:-product-service:50051}
+      ORDER_SERVICE_ADDRESS: ${ORDER_SERVICE_ADDRESS:-order-service:50052}
+    ports:
+      - "${GATEWAY_HTTP_PORT:-8080}:${GATEWAY_HTTP_PORT:-8080}"
+    depends_on:
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:${GATEWAY_HTTP_PORT:-8080}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  product-db:
+    name: ecommerce-product-db
+  order-db:
+    name: ecommerce-order-db

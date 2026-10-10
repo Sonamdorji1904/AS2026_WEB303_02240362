@@ -1,0 +1,10 @@
+.git
+.gitignore
+*.db
+*.test
+tmp/
+lambda/
+customer-service/
+inventory-service/
+payment-service/
+gateway/static/

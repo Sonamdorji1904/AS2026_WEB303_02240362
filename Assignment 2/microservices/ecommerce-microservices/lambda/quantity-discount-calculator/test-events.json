@@ -1,0 +1,56 @@
+[
+  {
+    "name": "quantity-1-no-discount",
+    "event": {
+      "productId": "P001",
+      "quantity": 1,
+      "unitPrice": 185000
+    },
+    "expectedOutput": {
+      "statusCode": 200,
+      "body": {
+        "productId": "P001",
+        "quantity": 1,
+        "unitPrice": 185000.00,
+        "subtotal": 185000.00,
+        "discountRate": 0,
+        "discount": 0.00,
+        "total": 185000.00
+      }
+    }
+  },
+  {
+    "name": "quantity-5-discount",
+    "event": {
+      "productId": "P001",
+      "quantity": 5,
+      "unitPrice": 185000
+    },
+    "expectedOutput": {
+      "statusCode": 200,
+      "body": {
+        "productId": "P001",
+        "quantity": 5,
+        "unitPrice": 185000.00,
+        "subtotal": 925000.00,
+        "discountRate": 0.10,
+        "discount": 92500.00,
+        "total": 832500.00
+      }
+    }
+  },
+  {
+    "name": "invalid-quantity",
+    "event": {
+      "productId": "P001",
+      "quantity": 0,
+      "unitPrice": 185000
+    },
+    "expectedOutput": {
+      "statusCode": 400,
+      "body": {
+        "error": "quantity must be an integer between 1 and 10000"
+      }
+    }
+  }
+]
